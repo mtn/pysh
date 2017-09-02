@@ -1,9 +1,11 @@
-from tatsu import parse
+from TatSu import parse
 import readline
 import pprint
 
 readline.read_init_file('readline.rc')
 PROMPT = '> '
+
+parser = Parser()
 
 def main():
     while True:
@@ -15,7 +17,7 @@ def main():
         print(tree)
 
 def parse_line(cmdline):
-    return parse(GRAMMAR, cmdline)
+    return parser.parse(cmdline)
 
 GRAMMAR = '''
     @@grammar::CMD_PARSE
@@ -36,11 +38,15 @@ GRAMMAR = '''
 
     arg
         =
-        /[^\s]+/
+        /[^\s]/
         ;
 
 
 '''
+
+class Parser:
+    def __init__():
+
 
 
 if __name__ =='__main__':
