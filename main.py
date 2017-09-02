@@ -1,5 +1,6 @@
 from tatsu.model import ModelBuilderSemantics
 from tatsu import parse
+import subprocess
 import readline
 
 readline.read_init_file('readline.rc')
@@ -12,13 +13,24 @@ def main():
         if cmdline == 'exit':
             break
 
-        tree = parse_line(cmdline)
-        print(tree)
-        print(tree['command'])
+        if cmdline != '':
+            tree = parse_line(cmdline)
+            pids = execute_command(tree['command'])
+
+            for pid in pids:
+                pid.wait()
 
 def parse_line(cmdline):
     semantics = ModelBuilderSemantics()
     return parse(GRAMMAR, cmdline, semantics=semantics)
+
+def execute_command(cmd):
+    if type(cmd.arg) is list:
+        cmd = list(map((lambda x: x.arg),cmd.arg))
+    else:
+        cmd = cmd.arg.arg
+
+    return [subprocess.Popen(cmd)]
 
 
 GRAMMAR = '''
