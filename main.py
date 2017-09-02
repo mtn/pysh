@@ -1,9 +1,10 @@
+from tatsu.model import ModelBuilderSemantics
 from tatsu import parse
 import readline
-import pprint
 
 readline.read_init_file('readline.rc')
 PROMPT = '> '
+
 
 def main():
     while True:
@@ -13,9 +14,12 @@ def main():
 
         tree = parse_line(cmdline)
         print(tree)
+        print(tree['command'])
 
 def parse_line(cmdline):
-    return parse(GRAMMAR, cmdline)
+    semantics = ModelBuilderSemantics()
+    return parse(GRAMMAR, cmdline, semantics=semantics)
+
 
 GRAMMAR = '''
     @@grammar::CMD_PARSE
@@ -26,19 +30,18 @@ GRAMMAR = '''
 
     cmdline
         =
-        { command }
+        { command:command }
         ;
 
-    command
+    command::Command
         =
-        { arg }
+        { arg:arg }
         ;
 
     arg
         =
-        /[^\s]+/
+        arg:/[^\s]+/
         ;
-
 
 '''
 
