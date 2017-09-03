@@ -1,5 +1,4 @@
-from tatsu.model import ModelBuilderSemantics
-from tatsu import parse
+from tatsu import model, parse, contexts
 import subprocess
 import readline
 
@@ -15,17 +14,21 @@ def main():
 
         if cmdline != '':
             tree = parse_line(cmdline)
-            pids = execute_command(tree['command'])
+            if type(tree['command']) is list:
+                for cmd in tree['command']:
+                    pids = execute_command(cmd)
+            else:
+                pids = execute_command(tree['command'])
 
             for pid in pids:
                 pid.wait()
 
 def parse_line(cmdline):
-    semantics = ModelBuilderSemantics()
+    semantics = model.ModelBuilderSemantics()
     return parse(GRAMMAR, cmdline, semantics=semantics)
 
 def execute_command(cmd):
-    if type(cmd.args) is list:
+    if type(cmd.args) is contexts.closure:
         cmd = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],cmd.args))
     else:
         cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
@@ -42,18 +45,18 @@ GRAMMAR = '''
 
     cmdline
         =
-        { command:command }
+        command: command
         ;
 
-    command::Command
+    command
         =
-        { args:arg }
+        args: { arg }
         ;
 
     arg
         =
-        | quoted_arg:/'[^']*'/
-        | unquoted_arg:/[^\s]+/
+        | quoted_arg: /'[^']*'/
+        | unquoted_arg: /[^\s]+/
         ;
 
 '''
