@@ -25,10 +25,10 @@ def parse_line(cmdline):
     return parse(GRAMMAR, cmdline, semantics=semantics)
 
 def execute_command(cmd):
-    if type(cmd.arg) is list:
-        cmd = list(map((lambda x: x.arg),cmd.arg))
+    if type(cmd.args) is list:
+        cmd = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],cmd.args))
     else:
-        cmd = cmd.arg.arg
+        cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
 
     return [subprocess.Popen(cmd)]
 
@@ -47,12 +47,13 @@ GRAMMAR = '''
 
     command::Command
         =
-        { arg:arg }
+        { args:arg }
         ;
 
     arg
         =
-        arg:/[^\s]+/
+        | quoted_arg:/'[^']*'/
+        | unquoted_arg:/[^\s]+/
         ;
 
 '''
