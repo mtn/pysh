@@ -1,6 +1,7 @@
 from tatsu import model, parse, contexts
 import subprocess
 import readline
+import pipes
 
 readline.read_init_file('readline.rc')
 PROMPT = '> '
@@ -15,18 +16,20 @@ def main():
         if cmdline != '':
             tree = parse_line(cmdline)
             print(tree)
-            if type(tree['command']) is list:
-                for cmd in tree['command']:
-                    pids = execute_command(cmd)
-            else:
-                pids = execute_command(tree['command'])
-
+            pids = execute(tree)
             for pid in pids:
+                print(pid)
                 pid.wait()
 
 def parse_line(cmdline):
     semantics = model.ModelBuilderSemantics()
     return parse(GRAMMAR, cmdline, semantics=semantics)
+
+def execute(tree):
+    if tree['pipeline']:
+        return execute_pipeline(tree['pipeline'])
+    else:
+        return execute_command(tree['command'])
 
 def execute_command(cmd):
     if type(cmd.args) is contexts.closure:
@@ -35,6 +38,9 @@ def execute_command(cmd):
         cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
 
     return [subprocess.Popen(cmd)]
+
+def execute_pipeline(pipeline):
+    return execute_command(pipeline.command) + execute(pipeline.cmdline)
 
 
 GRAMMAR = '''
@@ -55,7 +61,7 @@ GRAMMAR = '''
         args: { arg }
         ;
 
-    pipeline::Pipeline
+    pipeline
         =
         command:command '|' cmdline:cmdline
         ;
