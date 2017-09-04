@@ -99,6 +99,7 @@ ENV/
 .mypy_cache/
 
 *.swp
+*.swo
 .DS_Store
 todo.txt
 test.py

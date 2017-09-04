@@ -14,6 +14,7 @@ def main():
 
         if cmdline != '':
             tree = parse_line(cmdline)
+            print(tree)
             if type(tree['command']) is list:
                 for cmd in tree['command']:
                     pids = execute_command(cmd)
@@ -45,18 +46,24 @@ GRAMMAR = '''
 
     cmdline
         =
-        command: command
+        | pipeline: pipeline
+        | command: command
         ;
 
-    command
+    command::Command
         =
         args: { arg }
         ;
 
+    pipeline::Pipeline
+        =
+        command:command '|' cmdline:cmdline
+        ;
+
     arg
         =
-        | quoted_arg: /'[^']*'/
-        | unquoted_arg: /[^\s]+/
+        | quoted_arg: /'[^'|]*'/
+        | unquoted_arg: /[^\s|]+/
         ;
 
 '''
