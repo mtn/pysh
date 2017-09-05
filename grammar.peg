@@ -1,0 +1,34 @@
+@@grammar::CMD_PARSE
+@@left_recursion :: False
+
+start = cmdline $ ;
+
+cmdline
+    =
+    | pipeline: pipeline
+    | redirection: redirection
+    | command: command
+    ;
+
+pipeline
+    =
+    (redirection:redirection | command:command) '|' cmdline:cmdline
+    ;
+
+redirection
+    =
+    command:command { '>' outfile:arg }
+    ;
+
+command::Command
+    =
+    | cd: (/cd/ | /'cd'/) [ dest_dir:arg ]
+    | args: { arg }
+    ;
+
+arg
+    =
+    | quoted_arg: /'[^>'|]*'/
+    | unquoted_arg: /[^>\s|]+/
+    ;
+

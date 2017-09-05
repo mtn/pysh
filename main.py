@@ -5,6 +5,7 @@ import tempfile
 import os
 
 
+GRAMMAR = open('grammar.peg','r').read()
 readline.read_init_file('readline.rc')
 PROMPT = '> '
 
@@ -62,43 +63,6 @@ def execute_pipeline(pipeline,t,stdin=0):
     t.close()
     execute(pipeline.cmdline,stdin=f)
 
-
-GRAMMAR = '''
-    @@grammar::CMD_PARSE
-    @@left_recursion :: False
-
-    start = cmdline $ ;
-
-    cmdline
-        =
-        | pipeline: pipeline
-        | redirection: redirection
-        | command: command
-        ;
-
-    pipeline
-        =
-        (redirection:redirection | command:command) '|' cmdline:cmdline
-        ;
-
-    redirection
-        =
-        command:command { '>' outfile:arg }
-        ;
-
-    command::Command
-        =
-        | cd: (/cd/ | /'cd'/) [ dest_dir:arg ]
-        | args: { arg }
-        ;
-
-    arg
-        =
-        | quoted_arg: /'[^>'|]*'/
-        | unquoted_arg: /[^>\s|]+/
-        ;
-
-'''
 
 
 if __name__ =='__main__':
