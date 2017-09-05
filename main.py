@@ -27,12 +27,12 @@ def parse_line(cmdline):
 
 def execute(tree,stdin=0):
     print(tree)
-    # if tree['redirection']:
-    #     print('hi')
+    if tree['redirection']:
+        print('hi')
     #     # print(tree['redirection'])
     #     # fd = os.open()
     #     # os.dup2(0,)
-    if tree['pipeline']:
+    elif tree['pipeline']:
         t = tempfile.NamedTemporaryFile(mode='w')
         execute_pipeline(tree['pipeline'],t,stdin)
     else:
@@ -40,12 +40,9 @@ def execute(tree,stdin=0):
 
 
 def execute_command(cmd,stdin=0,stdout=1):
-    print(cmd)
     if hasattr(cmd,'args'):
         if type(cmd.args) is contexts.closure:
-            print('hi')
             cmd = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],cmd.args))
-            print(cmd)
         else:
             cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
         subprocess.run(cmd,stdin=stdin,stdout=stdout)
@@ -74,31 +71,31 @@ GRAMMAR = '''
 
     cmdline
         =
-        | redirection: redirection
         | pipeline: pipeline
+        | redirection: redirection
         | command: command
-        ;
-
-    redirection
-        =
-        cmdline:cmdline '>' outfile:arg
         ;
 
     pipeline
         =
-        command:command '|' cmdline:cmdline
+        (redirection:redirection | command:command) '|' cmdline:cmdline
+        ;
+
+    redirection
+        =
+        command:command { '>' outfile:arg }
         ;
 
     command::Command
         =
-        | cd: (/cd/ | /'cd'/) [dest_dir:arg]
+        | cd: (/cd/ | /'cd'/) [ dest_dir:arg ]
         | args: { arg }
         ;
 
     arg
         =
-        | quoted_arg: /'[^'|]*'/
-        | unquoted_arg: /[^\s|]+/
+        | quoted_arg: /'[^>'|]*'/
+        | unquoted_arg: /[^>\s|]+/
         ;
 
 '''
