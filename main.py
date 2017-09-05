@@ -2,6 +2,7 @@ from tatsu import model, parse, contexts
 import subprocess
 import readline
 import tempfile
+import os
 
 readline.read_init_file('readline.rc')
 PROMPT = '> '
@@ -16,7 +17,6 @@ def main():
 
         if cmdline != '':
             tree = parse_line(cmdline)
-            print(tree)
             execute(tree)
 
 
@@ -32,16 +32,24 @@ def execute(tree,stdin=0):
         execute_command(tree['command'],stdin)
 
 def execute_command(cmd,stdin=0,stdout=1):
-    if type(cmd.args) is contexts.closure:
-        cmd = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],cmd.args))
+    if hasattr(cmd,'args'):
+        if type(cmd.args) is contexts.closure:
+            cmd = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],cmd.args))
+        else:
+            cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
+        subprocess.run(cmd,stdin=stdin,stdout=stdout)
     else:
-        cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
-
-    a = subprocess.run(cmd,stdin=stdin,stdout=stdout)
+        if hasattr(cmd,'dest_dir'):
+            dest = cmd.dest_dir.unquoted_arg or cmd.dest_dir.quoted_arg[1:-1]
+            if dest == '~':
+                dest = os.getenv('HOME')
+        else:
+            dest = os.getenv('HOME')
+        os.chdir(dest)
 
 def execute_pipeline(pipeline,t,stdin=0):
-    f = open(t.name, 'r')
     execute_command(pipeline.command,stdin=stdin,stdout=t)
+    f = open(t.name, 'r')
     t.close()
     execute(pipeline.cmdline,stdin=f)
 
@@ -61,7 +69,8 @@ GRAMMAR = '''
 
     command::Command
         =
-        args: { arg }
+        | cd: (/cd/ | /'cd'/) [dest_dir:arg]
+        | args: { arg }
         ;
 
     pipeline
