@@ -2,10 +2,10 @@ from tatsu import model, parse, contexts
 import subprocess
 import readline
 import tempfile
-import pipes
 
 readline.read_init_file('readline.rc')
 PROMPT = '> '
+
 
 
 def main():
@@ -17,24 +17,19 @@ def main():
         if cmdline != '':
             tree = parse_line(cmdline)
             print(tree)
-            pids = execute(tree)
-            for pid in pids:
-                print(pid)
-                if pid.stdin:
-                    pid.stdin.close()
-                if pid.stdout:
-                    pid.stdout.close()
-                pid.wait()
+            execute(tree)
+
 
 def parse_line(cmdline):
     semantics = model.ModelBuilderSemantics()
     return parse(GRAMMAR,cmdline,semantics=semantics)
 
-def execute(tree,stdin=0,stdout=1):
+def execute(tree,stdin=0):
     if tree['pipeline']:
-        return execute_pipeline(tree['pipeline'])
+        t = tempfile.NamedTemporaryFile(mode='w')
+        execute_pipeline(tree['pipeline'],t,stdin)
     else:
-        return execute_command(tree['command'],stdin=stdin,stdout=stdout)
+        execute_command(tree['command'],stdin)
 
 def execute_command(cmd,stdin=0,stdout=1):
     if type(cmd.args) is contexts.closure:
@@ -42,14 +37,13 @@ def execute_command(cmd,stdin=0,stdout=1):
     else:
         cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
 
-    return [subprocess.Popen(cmd,stdin=stdin,stdout=stdout)]
+    a = subprocess.run(cmd,stdin=stdin,stdout=stdout)
 
-def execute_pipeline(pipeline):
-    p = pipes.Template()
-    t = tempfile.NamedTemporaryFile(mode='r')
-    f = p.open(t.name, 'w')
-    return execute_command(pipeline.command,stdout=f) + \
-            execute(pipeline.cmdline,stdin=t)
+def execute_pipeline(pipeline,t,stdin=0):
+    f = open(t.name, 'r')
+    execute_command(pipeline.command,stdin=stdin,stdout=t)
+    t.close()
+    execute(pipeline.cmdline,stdin=f)
 
 
 GRAMMAR = '''
