@@ -1,3 +1,4 @@
+@@left_recursion :: False
 
 start
     =
@@ -6,31 +7,20 @@ start
 
 cmdline
     =
-    | multiline:multiline
+    | pipeline:pipeline ';' cmdline:cmdline
     | pipeline:pipeline
-    | command:command
-    ;
-
-singleline
-    =
-    | pipeline:pipeline
-    | command:command
-    ;
-
-multiline
-    =
-    (pipeline:pipeline | command:command) ';' cmdline:cmdline
     ;
 
 pipeline
     =
-    command:command '|' singleline:singleline
+    | command:command '|' pipeline:pipeline
+    | command:command
     ;
 
 command
     =
     | cd: (/cd/ | /'cd'/) [ dest_dir:arg ]
-    | args: { arg }
+    | args: { arg }+
     ;
 
 arg

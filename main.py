@@ -4,6 +4,8 @@ import readline
 import tempfile
 import os
 
+import pprint
+
 
 GRAMMAR = open('grammar.peg','r').read()
 readline.read_init_file('readline.rc')
@@ -18,7 +20,7 @@ def main():
 
         if cmdline != '':
             tree = parse_line(cmdline)
-            execute(tree)
+            execute(tree['pipeline'])
 
 
 def parse_line(cmdline):
@@ -27,14 +29,15 @@ def parse_line(cmdline):
 
 
 def execute(tree,stdin=0):
-    if tree['multiline']:
-        execute(tree['multiline'])
-        execute(tree['multiline']['cmdline'])
-    elif tree['pipeline']:
-        t = tempfile.NamedTemporaryFile(mode='w')
-        execute_pipeline(tree['pipeline'],stdin,stdout=t)
-    else:
-        execute_command(tree['command'],stdin)
+    pprint.pprint(tree,indent=2, width=20)
+    # if tree['multiline']:
+    #     execute(tree['multiline'])
+    #     execute(tree['multiline']['cmdline'])
+    # elif tree['pipeline']:
+    #     t = tempfile.NamedTemporaryFile(mode='w')
+    #     execute_pipeline(tree['pipeline'],stdin,stdout=t)
+    # else:
+    #     execute_command(tree['command'],stdin)
 
 
 def execute_command(cmd,stdin=0,stdout=1):

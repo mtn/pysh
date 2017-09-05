@@ -1,0 +1,41 @@
+
+start
+    =
+    cmdline
+    ;
+
+cmdline
+    =
+    | multiline:multiline
+    | pipeline:pipeline
+    | command:command
+    ;
+
+singleline
+    =
+    | pipeline:pipeline
+    | command:command
+    ;
+
+multiline
+    =
+    (pipeline:pipeline | command:command) ';' cmdline:cmdline
+    ;
+
+pipeline
+    =
+    command:command '|' singleline:singleline
+    ;
+
+command
+    =
+    | cd: (/cd/ | /'cd'/) [ dest_dir:arg ]
+    | args: { arg }
+    ;
+
+arg
+    =
+    | quoted_arg: /'[^'|;]*'/
+    | unquoted_arg: /[^\s|;]+/
+    ;
+
