@@ -20,7 +20,7 @@ def main():
 
         if cmdline != '':
             tree = parse_line(cmdline)
-            execute(tree['pipeline'])
+            execute(tree)
 
 
 def parse_line(cmdline):
@@ -29,13 +29,18 @@ def parse_line(cmdline):
 
 
 def execute(tree,stdin=0):
-    pprint.pprint(tree,indent=2, width=20)
+    pprint.pprint(tree['pipeline'],indent=2, width=20)
+    if tree['pipeline']:
+        if tree['pipeline']['pipeline']:
+            t = tempfile.NamedTemporaryFile(mode='w')
+            execute_pipeline(tree['pipeline'],stdin,stdout=t)
+        else:
+            execute_command(tree['pipeline']['command'],stdin)
+    # if tree['cmdline']:
+    #     execute_command()
     # if tree['multiline']:
     #     execute(tree['multiline'])
     #     execute(tree['multiline']['cmdline'])
-    # elif tree['pipeline']:
-    #     t = tempfile.NamedTemporaryFile(mode='w')
-    #     execute_pipeline(tree['pipeline'],stdin,stdout=t)
     # else:
     #     execute_command(tree['command'],stdin)
 
@@ -58,10 +63,11 @@ def execute_command(cmd,stdin=0,stdout=1):
 
 
 def execute_pipeline(pipeline,stdin=0,stdout=1):
+    pprint.pprint(pipeline,indent=2,width=20)
     execute_command(pipeline.command,stdin,stdout)
     f = open(stdout.name, 'r')
     stdout.close()
-    execute(pipeline.singleline,stdin=f)
+    execute(pipeline,stdin=f)
 
 
 
