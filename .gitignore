@@ -103,4 +103,5 @@ ENV/
 .DS_Store
 todo.txt
 test.py
+foo.txt
 

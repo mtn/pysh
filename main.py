@@ -27,15 +27,12 @@ def parse_line(cmdline):
 
 
 def execute(tree,stdin=0):
-    print(tree)
-    if tree['redirection']:
-        print('hi')
-    #     # print(tree['redirection'])
-    #     # fd = os.open()
-    #     # os.dup2(0,)
+    if tree['multiline']:
+        execute(tree['multiline'])
+        execute(tree['multiline']['cmdline'])
     elif tree['pipeline']:
         t = tempfile.NamedTemporaryFile(mode='w')
-        execute_pipeline(tree['pipeline'],t,stdin)
+        execute_pipeline(tree['pipeline'],stdin,stdout=t)
     else:
         execute_command(tree['command'],stdin)
 
@@ -57,11 +54,11 @@ def execute_command(cmd,stdin=0,stdout=1):
         os.chdir(dest)
 
 
-def execute_pipeline(pipeline,t,stdin=0):
-    execute_command(pipeline.command,stdin=stdin,stdout=t)
-    f = open(t.name, 'r')
-    t.close()
-    execute(pipeline.cmdline,stdin=f)
+def execute_pipeline(pipeline,stdin=0,stdout=1):
+    execute_command(pipeline.command,stdin,stdout)
+    f = open(stdout.name, 'r')
+    stdout.close()
+    execute(pipeline.singleline,stdin=f)
 
 
 
