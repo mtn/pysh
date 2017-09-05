@@ -4,8 +4,6 @@ import readline
 import tempfile
 import os
 
-import pprint
-
 
 GRAMMAR = open('grammar.peg','r').read()
 readline.read_init_file('readline.rc')
@@ -29,20 +27,14 @@ def parse_line(cmdline):
 
 
 def execute(tree,stdin=0):
-    pprint.pprint(tree['pipeline'],indent=2, width=20)
     if tree['pipeline']:
         if tree['pipeline']['pipeline']:
             t = tempfile.NamedTemporaryFile(mode='w')
             execute_pipeline(tree['pipeline'],stdin,stdout=t)
         else:
             execute_command(tree['pipeline']['command'],stdin)
-    # if tree['cmdline']:
-    #     execute_command()
-    # if tree['multiline']:
-    #     execute(tree['multiline'])
-    #     execute(tree['multiline']['cmdline'])
-    # else:
-    #     execute_command(tree['command'],stdin)
+    if tree['cmdline']:
+        execute(tree['cmdline'])
 
 
 def execute_command(cmd,stdin=0,stdout=1):
@@ -51,7 +43,10 @@ def execute_command(cmd,stdin=0,stdout=1):
             cmd = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],cmd.args))
         else:
             cmd = cmd.args.unquoted_arg or cmd.args.quoted_arg[1:-1]
-        subprocess.run(cmd,stdin=stdin,stdout=stdout)
+        try:
+            subprocess.run(cmd,stdin=stdin,stdout=stdout)
+        except:
+            print('Command failed')
     else:
         if hasattr(cmd,'dest_dir'):
             dest = cmd.dest_dir.unquoted_arg or cmd.dest_dir.quoted_arg[1:-1]
@@ -63,7 +58,6 @@ def execute_command(cmd,stdin=0,stdout=1):
 
 
 def execute_pipeline(pipeline,stdin=0,stdout=1):
-    pprint.pprint(pipeline,indent=2,width=20)
     execute_command(pipeline.command,stdin,stdout)
     f = open(stdout.name, 'r')
     stdout.close()
