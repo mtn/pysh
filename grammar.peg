@@ -2,22 +2,35 @@
 
 start
     =
-    cmdline
+    { command {';'} }
     ;
 
-cmdline
+command
     =
-    | pipeline:pipeline ';' cmdline:cmdline
-    | pipeline:pipeline
+    (
+        | pipeline:pipeline
+        | redirection:redirection
+        | command:base_command
+    )
+    ;
+
+left
+    =
+    | redirection:redirection
+    | command:base_command
     ;
 
 pipeline
     =
-    | command:command '|' pipeline:pipeline
-    | command:command
+    left:left '|' right:command
     ;
 
-command
+redirection
+    =
+    command:base_command { '>' outfile:arg }+
+    ;
+
+base_command
     =
     | cd: (/cd/ | /'cd'/) [ dest_dir:arg ]
     | args: { arg }+
@@ -25,7 +38,7 @@ command
 
 arg
     =
-    | quoted_arg: /'[^'|;]*'/
-    | unquoted_arg: /[^\s|;]+/
+    | quoted_arg: /'[^'|;>]*'/
+    | unquoted_arg: /[^\s|;>]+/
     ;
 
