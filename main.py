@@ -1,4 +1,4 @@
-from tatsu import model, parse, contexts
+from tatsu import parse, contexts
 import subprocess
 import readline
 import tempfile
@@ -19,39 +19,33 @@ def main():
             break
 
         if cmdline != '':
-            tree = parse_line(cmdline)
-            execute(tree)
-
-
-def parse_line(cmdline):
-    semantics = model.ModelBuilderSemantics()
-    return parse(GRAMMAR,cmdline,semantics=semantics)
+            tree = parse(GRAMMAR,cmdline)
+            for cmd in tree:
+                execute(cmd[0])
 
 
 def execute(tree,stdin=0):
-    print(json.dumps(tree, indent=4))
-    # if tree['pipeline']:
-    #     if tree['pipeline']['redirection']:
-    #         outfiles = tree['pipeline']['redirection']['outfile']
-    #         if type(outfiles) is list:
-    #             outfiles = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],outfiles))
-    #         else:
-    #             outfiles = [outfiles.unquoted_arg or outfiles.quoted_arg[1:-1]]
+    if tree['pipeline']:
+        if tree['pipeline']['left']['redirection']:
+            outfiles = get_outfiles(tree['pipeline']['left']['redirection']['outfile'])
 
-    #         execute_redirection(tree['pipeline']['redirection'],outfiles)
-    #         if tree['pipeline']['pipeline']:
-    #             t = tempfile.NamedTemporaryFile(mode='w')
-    #             t.write('\0')
-    #             execute_command(tree['pipeline']['pipeline']['command'],stdin=t)
-    #             t.close()
+            execute_redirection(tree['pipeline']['left']['redirection'],outfiles)
 
-    #     elif tree['pipeline']['pipeline']:
-    #         t = tempfile.NamedTemporaryFile(mode='w')
-    #         execute_pipeline(tree['pipeline'],stdin,stdout=t)
-    #     else:
-    #         execute_command(tree['pipeline']['command'],stdin)
-    # if tree['cmdline']:
-    #     execute(tree['cmdline'])
+            t = tempfile.NamedTemporaryFile(mode='w')
+            execute_command(tree['pipeline']['right']['command'],stdin=t)
+            t.close()
+        else:
+            t = tempfile.NamedTemporaryFile(mode='w')
+            execute_pipeline(tree['pipeline'],stdin,stdout=t)
+    elif tree['command']:
+        execute_command(tree['command'],stdin)
+    else:
+        outfiles = get_outfiles(tree['redirection']['outfiles'])
+        if type(outfiles) is list:
+            outfiles = list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],outfiles))
+        else:
+            outfiles = [outfiles.unquoted_arg or outfiles.quoted_arg[1:-1]]
+        execute_redirection(tree['redirection']['command'],outfiles)
 
 
 def execute_command(cmd,stdin=0,stdout=1):
@@ -81,11 +75,16 @@ def execute_redirection(cmd,outfiles):
             f.write(cmd.stdout.decode('utf-8'))
 
 def execute_pipeline(pipeline,stdin=0,stdout=1):
-    execute_command(pipeline.command,stdin,stdout)
+    execute_command(pipeline['left']['command'],stdin,stdout)
     f = open(stdout.name, 'r')
     stdout.close()
-    execute(pipeline,stdin=f)
+    execute(pipeline['right'],stdin=f)
 
+def get_outfiles(outfiles):
+    if type(outfiles) is list:
+        return list(map(lambda x: x.unquoted_arg or x.quoted_arg[1:-1],outfiles))
+    else:
+        return [outfiles.unquoted_arg or outfiles.quoted_arg[1:-1]]
 
 
 if __name__ =='__main__':

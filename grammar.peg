@@ -7,11 +7,9 @@ start
 
 command
     =
-    (
-        | pipeline:pipeline
-        | redirection:redirection
-        | command:base_command
-    )
+    | pipeline:pipeline
+    | redirection:redirection
+    | command:base_command
     ;
 
 left
