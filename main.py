@@ -16,10 +16,16 @@ def main():
         if cmdline == 'exit':
             break
 
-        if cmdline != '':
-            tree = parse(GRAMMAR,cmdline)
+        if cmdline:
+            try:
+                tree = parse(GRAMMAR,cmdline)
+            except:
+                print('An parse error occured')
             for cmd in tree:
-                execute(cmd[0])
+                try:
+                    execute(cmd[0])
+                except:
+                    print('Command failed')
 
 
 def execute(tree,stdin=0):
